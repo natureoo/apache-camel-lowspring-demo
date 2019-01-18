@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:camel="http://camel.apache.org/schema/spring"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+        http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring-2.14.1.xsd ">
+
+    <bean id="myErrorHandler" class="org.apache.camel.builder.DefaultErrorHandlerBuilder">
+        <property name="redeliveryPolicy" ref="myPolicy"/>
+        <!--2.3没有onExceptionOccurred这个属性-->
+        <!--<property name="onExceptionOccurred" ref="exceptionProcesser"/>-->
+        <property name="onRedelivery" ref="exceptionProcesser"/>
+        <!--<property name="failureProcessor" ref="exceptionProcesser"/>-->
+    </bean>
+    <!-- and let it try to redeliver up till 4 times -->
+    <bean id="myPolicy" class="org.apache.camel.processor.RedeliveryPolicy">
+        <property name="maximumRedeliveries" value="2"/>
+        <!--<property name="redeliveryDelay" value="1000"/>-->
+    </bean>
+
+    <camelContext  xmlns="http://camel.apache.org/schema/spring">
+        <endpoint id="jetty_from" uri="jetty:http://0.0.0.0:8282/httpCamel"/>
+        <endpoint id="log_to1" uri="http4://localhost:8081/camel/post"/>
+        <endpoint id="log_to2" uri="http4://localhost:8082/camel/post"/>
+        <endpoint id="to_uris" uri="http4://localhost:8081/camel/post,http4://localhost:8082/camel/post"/>
+
+
+        <route errorHandlerRef="myErrorHandler">
+
+            <from ref="jetty_from"/>
+            <process ref="httpProcesser"></process>
+            <setHeader headerName="CamelHttpMethod">
+                <simple>POST</simple>
+            </setHeader>
+            <setHeader headerName="Content-Type">
+                <simple>application/json</simple>
+            </setHeader>
+
+            <loadBalance>
+                <!--2.3不支持sticky-->
+                <!--<failover sticky="true"></failover>-->
+                <failover></failover>
+                <!--<to ref="to_uris"></to>-->
+                <!--<recipientList>-->
+                    <!--<constant>http4://localhost:8081/camel/post,http4://localhost:8082/camel/post</constant>-->
+                <!--</recipientList>-->
+                <to ref="log_to1"/>
+
+                <to ref="log_to2"/>
+            </loadBalance>
+
+            <to uri="log:directRouteA?showExchangeId=true"></to>
+            <to  uri="direct:directRouteB"></to>
+        </route>
+        <route>
+            <from uri="direct:directRouteB"></from>
+            <process ref="otherProcesser"></process>
+            <to uri="log:directRouteB?showExchangeId=true"></to>
+        </route>
+
+
+    </camelContext>
+
+
+    <bean id="httpProcesser" class="demo.chenj.processer.HttpProcessor"></bean>
+    <bean id="otherProcesser" class="demo.chenj.processer.OtherProcessor"></bean>
+    <bean id="exceptionProcesser" class="demo.chenj.processer.ExceptionProcessor"></bean>
+    <bean id="orderService" class="demo.chenj.processer.OrderService"></bean>
+
+
+</beans>
