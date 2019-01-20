@@ -11,10 +11,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 
 public class FailoverJavaCamel extends RouteBuilder {
 
@@ -34,7 +33,13 @@ public class FailoverJavaCamel extends RouteBuilder {
 //        Properties prop = new Properties();
 //        prop.load(inStream);
 //        String sendUris = prop.getProperty("send.uris");
-        String sendUris = System.getProperty("sendUris");
+        Map<String, String> env = System.getenv();
+        for(String key: env.keySet()){
+            LOGGER.info("env key [{}], value [{}]"+env.get(key));
+        }
+
+
+        String sendUris = System.getenv("SEND_URIS");
         LOGGER.info("send.uris:"+sendUris);
         sendUriList = new ArrayList<>();
         for(String uri:sendUris.split(",")) {
@@ -74,16 +79,22 @@ public class FailoverJavaCamel extends RouteBuilder {
                 .onRedelivery(new ExceptionProcessor());
         from("stream:in?promptMessage=Enter post json body : ")
                 .setHeader(Exchange.HTTP_METHOD, constant("POST"))
-                .setHeader(Exchange.CONTENT_TYPE, constant("application/json;charset=utf-8"))
+                .setHeader(Exchange.CONTENT_TYPE, constant("application/json"))
+//                .setHeader(Exchange.HTTP_CHARACTER_ENCODING, constant("UTF-8"))
+//                .setHeader(Exchange.CONTENT_ENCODING, constant("UTF-8"))
                 .process(new HttpProcessor())
 
+
+                .to("log:DEBUG?showBody=true&showHeaders=true")
                 //failover(int maximumFailoverAttempts, boolean inheritErrorHandler, boolean roundRobin, boolean sticky, Class... exceptions
+//                .removeHeader("CONTENT_ENCODING")
                 .loadBalance().failover()
 
-//                .to("http://localhost:8081/camel/post?bridgeEndpoint=true").
-//                to("http://localhost:8082/camel/post?bridgeEndpoint=true")
                 .to((String[])sendUriList.toArray(new String[0]))
+
+
                 .end()
+                .to("log:DEBUG?showBody=true&showHeaders=true")
                  .process(new OtherProcessor());
     }
 

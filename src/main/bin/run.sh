@@ -1,14 +1,14 @@
 #!/bin/bash
 DEPLOY_DIR=`pwd`
 echo "DEPLOY_DIR=$DEPLOY_DIR"
-PIDS=`ps -ef | grep java | grep $DEPLOY_DIR |awk '{print $2}'`
+PIDS=`ps -ef | grep java | grep apache-camel-lowspring-demo |awk '{print $2}'`
 if [ -n "$PIDS" ]; then
     echo "ERROR: The beast-member already started!"
     echo "PID: $PIDS"
     exit 1
 fi
 
-export JAVA_OPTS="-DsendUrist=http4://localhost:8081/camel/post,http4://localhost:8082/camel/post"
+export SEND_URIS="http4://localhost:8081/camel/post,http4://localhost:8082/camel/post"
 
 LIB_DIR=$DEPLOY_DIR/lib
 echo "lib dir: $LIB_DIR"

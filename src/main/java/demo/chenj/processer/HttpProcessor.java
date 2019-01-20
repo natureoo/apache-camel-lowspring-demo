@@ -6,8 +6,6 @@ import org.apache.camel.Processor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-
 public class HttpProcessor implements Processor {
     private static Logger LOGGER = LoggerFactory.getLogger(HttpProcessor.class);
 
@@ -26,11 +24,11 @@ public class HttpProcessor implements Processor {
 
         // 存入到exchange的out区域
         Message outMessage = exchange.getOut();
-        Map<String, Object> headers = exchange.getIn().getHeaders();
-        for(String key:headers.keySet()){
-            LOGGER.info("request header [{}:{}]", key, headers.get(key));
-        }
-        LOGGER.info("request body [{}]", exchange.getIn().getBody());
+//        Map<String, Object> headers = exchange.getIn().getHeaders();
+//        for(String key:headers.keySet()){
+//            LOGGER.info("request header [{}:{}]", key, headers.get(key));
+//        }
+//        LOGGER.info("request body [{}]", exchange.getIn().getBody());
 
 //        outMessage.setBody("{\"title\": \"The title\", \"content\": \"The content\"}");
         outMessage.setHeaders(exchange.getIn().getHeaders());
