@@ -11,9 +11,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 public class FailoverJavaCamel extends RouteBuilder {
 
@@ -29,17 +31,17 @@ public class FailoverJavaCamel extends RouteBuilder {
 
     public static void main(String[] args) throws Exception {
 
-//        InputStream inStream = FailoverJavaCamel.class.getClassLoader().getResourceAsStream("demp.properties");
-//        Properties prop = new Properties();
-//        prop.load(inStream);
-//        String sendUris = prop.getProperty("send.uris");
-        Map<String, String> env = System.getenv();
-        for(String key: env.keySet()){
-            LOGGER.info("env key [{}], value [{}]"+env.get(key));
+
+        String sendUris = System.getenv("SEND_URIS");
+
+        if(sendUris == null || sendUris.equals("")) {
+            InputStream inStream = FailoverJavaCamel.class.getClassLoader().getResourceAsStream("demp.properties");
+            Properties prop = new Properties();
+            prop.load(inStream);
+            sendUris = prop.getProperty("SEND_URIS");
         }
 
 
-        String sendUris = System.getenv("SEND_URIS");
         LOGGER.info("send.uris:"+sendUris);
         sendUriList = new ArrayList<>();
         for(String uri:sendUris.split(",")) {
@@ -76,8 +78,9 @@ public class FailoverJavaCamel extends RouteBuilder {
 //        errorHandler(deadLetterChannel("log:deadLetterChannel?showExchangeId=true").maximumRedeliveries(4).onExceptionOccurred(new ExceptionProcessor()));
         onException(IOException.class)
                 .maximumRedeliveries(1)
+                .redeliveryDelay(0)
                 .onRedelivery(new ExceptionProcessor());
-        from("stream:in?promptMessage=Enter post json body : ")
+        from("jetty:http://0.0.0.0:8282/httpCamel")
                 .setHeader(Exchange.HTTP_METHOD, constant("POST"))
                 .setHeader(Exchange.CONTENT_TYPE, constant("application/json"))
 //                .setHeader(Exchange.HTTP_CHARACTER_ENCODING, constant("UTF-8"))
@@ -97,14 +100,6 @@ public class FailoverJavaCamel extends RouteBuilder {
                 .to("log:DEBUG?showBody=true&showHeaders=true")
                  .process(new OtherProcessor());
     }
-
-
-
-
-
-
-
-
 
 
 }

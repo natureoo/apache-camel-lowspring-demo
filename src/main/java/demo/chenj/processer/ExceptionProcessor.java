@@ -18,7 +18,7 @@ public class ExceptionProcessor implements Processor {
            Map<String, Object> properties = exchange.getProperties();
            Exception cause = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
 
-           LOGGER.info("--ondelivery cause--:" + cause.toString());
+           LOGGER.info("--ondelivery cause--:" + cause!=null?cause.toString():"");
     }
 
 

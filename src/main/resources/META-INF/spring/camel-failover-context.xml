@@ -16,15 +16,16 @@
     </bean>
     <!-- and let it try to redeliver up till 4 times -->
     <bean id="myPolicy" class="org.apache.camel.processor.RedeliveryPolicy">
-        <property name="maximumRedeliveries" value="2"/>
-        <!--<property name="redeliveryDelay" value="1000"/>-->
+        <property name="maximumRedeliveries" value="1"/>
+        <property name="redeliveryDelay" value="0"/>
     </bean>
 
     <camelContext  xmlns="http://camel.apache.org/schema/spring">
         <endpoint id="jetty_from" uri="jetty:http://0.0.0.0:8282/httpCamel"/>
-        <endpoint id="log_to1" uri="http4://localhost:8081/camel/post"/>
-        <endpoint id="log_to2" uri="http4://localhost:8082/camel/post"/>
-        <endpoint id="to_uris" uri="http4://localhost:8081/camel/post,http4://localhost:8082/camel/post"/>
+        <endpoint id="log_to1" uri="http4://192.168.1.1:8081/camel/post"/>
+        <endpoint id="log_to2" uri="http4://192.168.1.1:8082/camel/post"/>
+        <!--<endpoint id="log_to1" uri="${SEND_URI1}"/>-->
+        <!--<endpoint id="log_to2" uri="${SEND_URI2}"/>-->
 
 
         <route errorHandlerRef="myErrorHandler">
@@ -46,7 +47,7 @@
                 <!--<recipientList>-->
                     <!--<constant>http4://localhost:8081/camel/post,http4://localhost:8082/camel/post</constant>-->
                 <!--</recipientList>-->
-                <to ref="log_to1"/>
+                <to  ref="log_to1"/>
 
                 <to ref="log_to2"/>
             </loadBalance>
